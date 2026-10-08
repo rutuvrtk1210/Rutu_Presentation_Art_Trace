@@ -456,10 +456,6 @@ function BlobFeature({
     setSelectedStamp(null)
   }
 
-  const clearPainting = () => {
-    if (stamps.length) commitStamps([])
-  }
-
   const cursorGradient = palette.length === 4
     ? `radial-gradient(circle at 68% 34%, ${palette[0]} 0%, ${palette[1]} 28%, ${palette[2]} 58%, ${palette[3]} 100%)`
     : "transparent"
@@ -713,7 +709,6 @@ function BlobFeature({
               <span>BLOB OPACITY</span>
             </label>
             <Button className="save-button" onClick={() => { setSaved(true); window.setTimeout(() => setSaved(false), 1600) }}>{saved ? "SAVED \u2713" : "SAVE"}</Button>
-            <Button onClick={clearPainting}>Clear canvas</Button>
           </div>
         ) : (
           <div className="blob-palette-panel">
@@ -937,9 +932,9 @@ function CutoutFeature({
             <Button className="save-button" onClick={() => { setSaved(true); window.setTimeout(() => setSaved(false), 1600) }}>{saved ? "SAVED \u2713" : "SAVE"}</Button>
           )}
           <Button className="place-button" onClick={advanceCutout}>
-            {stage === "select" && "Confirm cutout"}
-            {stage === "masked" && "Place on postcard"}
-            {stage === "placed" && "Done"}
+            {stage === "select" && "CONFIRM"}
+            {stage === "masked" && "ADD STAMP"}
+            {stage === "placed" && "DONE"}
           </Button>
         </div>
         <input
@@ -1592,18 +1587,9 @@ function FinalScreen({
             <span className="stat stat-end"><b>18:09</b><small>min</small></span>
           </header>
           <div className="postcard-rotator">
+            {/* Live composition of the user's actual selected features, laid out
+                in the frame-13 treemap (ColorBlob / Doodle / Note / Photo Cutout). */}
             <PostcardComposition elements={elements} results={results} image={image} />
-          </div>
-          {/* Pixel-faithful final composition from 15_FINAL PREVIEW.svg, shown only
-              in the exact 1280x832 frame; the live treemap above covers all other sizes. */}
-          <div className="final-composition" aria-hidden="true">
-            <span className="fc-region fc-blob" />
-            <span className="fc-region fc-doodle" />
-            <span className="fc-region fc-note" />
-            <span className="fc-corner fc-corner-blob" />
-            <span className="fc-corner fc-corner-note" />
-            <span className="fc-corner fc-corner-doodle" />
-            <span className="fc-stamp" />
           </div>
           <footer><b>{name}</b><span>ART—TRACE · A WALK REMADE</span></footer>
         </article>

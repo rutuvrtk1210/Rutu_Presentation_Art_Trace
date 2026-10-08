@@ -2912,23 +2912,12 @@ button { color: inherit; }
     white-space: nowrap;
   }
 
-  /* In the exact frame the live treemap is replaced by the pixel-faithful
-     static composition below; hide the rotator/treemap and signature footer. */
-  .finished-screen .postcard-rotator { display: none; }
-  .finished-screen .print-postcard > footer { display: none; }
-
-  /* Inner white postcard surface (209.516,188 860.969x507 r15 in the SVG). */
-  .finished-screen .final-composition {
-    position: absolute;
-    z-index: 1;
-    top: 138px;              /* 188 - 50 */
-    left: 18.516px;          /* 209.516 - 191 */
-    display: block;
-    width: 860.969px;
-    height: 507px;
-    border-radius: 15px;
-    background: #fff;
-  }
+  /* Always render the LIVE composition so the finished preview shows the user's
+     actual selected features (blob / cutout / note / doodle), not an empty mockup.
+     The old static .final-composition decoy is removed from the markup. */
+  .finished-screen .postcard-rotator { display: block; }
+  .finished-screen .print-postcard > footer { display: flex; }
+  .finished-screen .final-composition { display: none; }
   .finished-screen .final-composition .fc-region {
     position: absolute;
     display: block;
@@ -4242,3 +4231,55 @@ button { color: inherit; }
   margin-left: auto !important;
   margin-right: auto !important;
 }
+
+/* ------------------------------------------------------------------ *
+ * Slider labels (BLOB SIZE / BLOB OPACITY / STAMP SIZE) are bold —
+ * frames 5 & 7/8 show them at weight 900. Appended last to win.
+ * ------------------------------------------------------------------ */
+.blob-slider-panel label,
+.blob-slider-panel label span,
+.cutout-controls label,
+.cutout-controls label span,
+.studio-feature-screen .blob-slider-panel label,
+.studio-feature-screen .blob-slider-panel label span,
+.studio-feature-screen .cutout-controls label,
+.studio-feature-screen .cutout-controls label span {
+  font-family: "Rounded Mplus 1c Bold", "Rounded Mplus 1c", Arial, sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: .02em;
+}
+
+/* Button consistency: the cutout CONFIRM / ADD STAMP / DONE button uses the
+ * same outlined cylinder pill as SAVE (frames 7/8), instead of a dark slab. */
+.cutout-controls .place-button,
+.studio-feature-screen .cutout-controls .place-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  height: 44px;
+  padding: 0 24px !important;
+  border: 2px solid #2F2F2F !important;
+  border-radius: 24px !important;
+  background: #fff !important;
+  color: #2F2F2F !important;
+  font-family: "Rounded Mplus 1c Bold", "Rounded Mplus 1c", Arial, sans-serif !important;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+.cutout-controls .place-button:hover,
+.studio-feature-screen .cutout-controls .place-button:hover {
+  background: #2F2F2F !important;
+  color: #fff !important;
+}
+:root[data-theme="night"] .cutout-controls .place-button {
+  border-color: #f2efe6 !important;
+  background: transparent !important;
+  color: #f2efe6 !important;
+}
+
+/* Equal spacing: the blob paint panel now holds exactly BLOB SIZE · BLOB
+ * OPACITY · SAVE — distribute them evenly across the control row. */
+.studio-feature-screen .blob-slider-panel { justify-content: space-between !important; }
