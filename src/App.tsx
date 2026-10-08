@@ -166,7 +166,7 @@ function UploadScreen({ onSelect }: { onSelect: (image: string) => void }) {
           onChange={(event) => chooseFile(event.target.files?.[0])}
         />
         {image && <div className="trace-stage-actions">
-          <Button onClick={() => fileRef.current?.click()}>Retrace</Button>
+          <Button onClick={() => onSelect(image)}>Retrace</Button>
         </div>}
       </section>
 
@@ -281,6 +281,7 @@ function BlobFeature({
   const [cursor, setCursor] = useState({ x: 50, y: 50, visible: true })
   const [renderVersion, setRenderVersion] = useState(0)
   const [paintTool, setPaintTool] = useState<"add" | "move">("add")
+  const [saved, setSaved] = useState(false)
   const movingStamp = useRef<number | null>(null)
 
   const drawReference = () => {
@@ -711,12 +712,14 @@ function BlobFeature({
               />
               <span>BLOB OPACITY</span>
             </label>
+            <Button className="save-button" onClick={() => { setSaved(true); window.setTimeout(() => setSaved(false), 1600) }}>{saved ? "SAVED \u2713" : "SAVE"}</Button>
             <Button onClick={clearPainting}>Clear canvas</Button>
           </div>
         ) : (
           <div className="blob-palette-panel">
             <span className="palette-count">{palette.length} / 4 COLORS SELECTED</span>
             {palette.length > 0 && <span className="palette-blob organic-blob" style={{ background: cursorGradient }} />}
+            <Button className="choose-image" onClick={() => fileRef.current?.click()}>CHOOSE IMAGE</Button>
           </div>
         )}
 
@@ -774,6 +777,7 @@ function CutoutFeature({
   const [placedAt, setPlacedAt] = useState({ x: 50, y: 50 })
   const [rotation, setRotation] = useState(0)
   const [cutoutImage, setCutoutImage] = useState(image)
+  const [saved, setSaved] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const cropUndo = useRef<CutoutResult[]>([])
   const cropRedo = useRef<CutoutResult[]>([])
@@ -929,6 +933,9 @@ function CutoutFeature({
             }}><Icon path="M5 5v5h5M5 10a8 8 0 1 1 2 7" /> Reset</Button>
           )}
           {stage === "masked" && <Button onClick={() => setStage("select")}>Edit selection</Button>}
+          {stage === "placed" && (
+            <Button className="save-button" onClick={() => { setSaved(true); window.setTimeout(() => setSaved(false), 1600) }}>{saved ? "SAVED \u2713" : "SAVE"}</Button>
+          )}
           <Button className="place-button" onClick={advanceCutout}>
             {stage === "select" && "Confirm cutout"}
             {stage === "masked" && "Place on postcard"}
@@ -1196,25 +1203,27 @@ const featureLabels: Record<Feature, string> = {
   doodle: "Doodle",
 }
 
+// Frame-13 ("13.svg" / "15_FINAL PREVIEW.svg") treemap layout, as percentages of the
+// inner white board (SVG rect x=283 y=275 w=715 h=433). Each feature drops into its
+// real slot from the design: ColorBlob fills the wide top band, Doodle the lower-left,
+// Note the lower-right strip, and the Photo Cutout stamp overlays the centre.
+const frame13Slots: Record<Feature, Omit<CompositionElement, "feature" | "visible">> = {
+  // Red region #8E3557 — rect 298.25,291.25 .. 981.75,576.75
+  blob: { x: 2.1, y: 3.8, width: 95.6, height: 65.9, z: 1 },
+  // Blue region #005682 — rect 298.25,463.25 .. 543.75,692.75
+  doodle: { x: 2.1, y: 43.5, width: 34.3, height: 53, z: 2 },
+  // Green region #BBBCAC — rect 545,578 .. 983,694
+  note: { x: 36.6, y: 70, width: 61.3, height: 26.8, z: 3 },
+  // Stamp blob #404361 — overlays the centre, x≈469..652 y≈495..621
+  cutout: { x: 26, y: 50.8, width: 25.6, height: 29.1, z: 4 },
+}
+
 function defaultComposition(completed: Feature[]): CompositionElement[] {
-  const supporting = completed.filter((feature) => feature !== "blob")
-  const hasBlob = completed.includes("blob")
-  return completed.map((feature, index) => {
-    if (feature === "blob") {
-      return { feature, x: 0, y: 0, width: 100, height: 90, z: 1, visible: true }
-    }
-    const supportIndex = supporting.indexOf(feature)
-    const width = 100 / Math.max(1, supporting.length)
-    return {
-      feature,
-      x: supportIndex * width,
-      y: hasBlob ? 90 : 0,
-      width,
-      height: hasBlob ? 10 : 100,
-      z: index + 2,
-      visible: true,
-    }
-  })
+  // Preserve the design's stacking order regardless of the order features were finished.
+  const order: Feature[] = ["blob", "doodle", "note", "cutout"]
+  return order
+    .filter((feature) => completed.includes(feature))
+    .map((feature) => ({ feature, ...frame13Slots[feature], visible: true }))
 }
 
 function PostcardComposition({
@@ -1321,15 +1330,18 @@ function FinalScreen({
   image,
   results,
   onRestart,
-  onEdit,
+  onBack,
 }: {
   image: string
   results: Results
   onRestart: () => void
-  onEdit: () => void
+  onBack: () => void
 }) {
   const completed = (Object.keys(results) as Feature[]).filter((feature) => results[feature])
   const [stage, setStage] = useState<"choose" | "separate" | "edit" | "sign" | "finished">("choose")
+  // Remember which stage the sign step was reached from so BACK returns there
+  // (the merge flow enters sign from "edit"; the separate flow enters from "separate").
+  const [signFrom, setSignFrom] = useState<"edit" | "separate">("edit")
   const [elements, setElements] = useState(() => defaultComposition(completed))
   const [selected, setSelected] = useState<Feature>(completed[0] ?? "blob")
   const [name, setName] = useState("")
@@ -1470,7 +1482,7 @@ function FinalScreen({
         </nav>
         <div className="separate-actions">
           <Button onClick={() => setStage("choose")}>Back</Button>
-          <Button className="active" onClick={() => setStage("sign")}>Finish selected postcard</Button>
+          <Button className="active" onClick={() => { setSignFrom("separate"); setStage("sign") }}>Finish selected postcard</Button>
         </div>
       </main>
     )
@@ -1494,6 +1506,20 @@ function FinalScreen({
             onSelect={setSelected}
             onChange={updateElement}
           />
+          <Button
+            className="layer-forward"
+            disabled={!selectedElement}
+            onClick={() => selected && updateElement(selected, { z: Math.max(...elements.map((element) => element.z)) + 1 })}
+          >
+            <Icon path="M12 3 4 9l8 6 8-6-8-6ZM4 15l8 6 8-6" /><small>BRING FORWARD</small>
+          </Button>
+          <Button
+            className="layer-backward"
+            disabled={!selectedElement}
+            onClick={() => selected && updateElement(selected, { z: Math.min(...elements.map((element) => element.z)) - 1 })}
+          >
+            <Icon path="m4 9 8 6 8-6-8-6-8 6Zm0 6 8 6 8-6" /><small>SEND BACKWARD</small>
+          </Button>
           <aside className="composition-panel">
             <div className="region-tabs">
               {elements.map((element) => (
@@ -1513,10 +1539,6 @@ function FinalScreen({
                 <header><span>EDIT REGION</span><b>{featureLabels[selectedElement.feature]}</b></header>
                 <label>Width <span>{Math.round(selectedElement.width)}%</span><input type="range" min="8" max="100" value={selectedElement.width} onChange={(event) => updateElement(selected, { width: Number(event.target.value), x: Math.min(selectedElement.x, 100 - Number(event.target.value)) })} /></label>
                 <label>Height <span>{Math.round(selectedElement.height)}%</span><input type="range" min="8" max="100" value={selectedElement.height} onChange={(event) => updateElement(selected, { height: Number(event.target.value), y: Math.min(selectedElement.y, 100 - Number(event.target.value)) })} /></label>
-                <div className="layer-actions">
-                  <Button onClick={() => updateElement(selected, { z: Math.max(...elements.map((element) => element.z)) + 1 })}><Icon path="M12 3 4 9l8 6 8-6-8-6ZM4 15l8 6 8-6" />Bring forward</Button>
-                  <Button onClick={() => updateElement(selected, { z: Math.min(...elements.map((element) => element.z)) - 1 })}><Icon path="m4 9 8 6 8-6-8-6-8 6Zm0 6 8 6 8-6" />Send backward</Button>
-                </div>
                 <Button className="visibility-action" onClick={() => updateElement(selected, { visible: !selectedElement.visible })}>
                   {selectedElement.visible ? "Remove from postcard" : "Restore to postcard"}
                 </Button>
@@ -1526,7 +1548,7 @@ function FinalScreen({
           </aside>
         </section>
         <Button className="composer-back nav-circle" onClick={() => setStage("choose")}><Icon path="M15 18l-6-6 6-6" /><small>BACK</small></Button>
-        <Button className="composer-continue nav-circle" onClick={() => setStage("sign")}><Icon path="M9 6l6 6-6 6" /><small>NEXT</small></Button>
+        <Button className="composer-continue nav-circle" onClick={() => { setSignFrom("edit"); setStage("sign") }}><Icon path="M9 6l6 6-6 6" /><small>NEXT</small></Button>
       </main>
     )
   }
@@ -1549,7 +1571,7 @@ function FinalScreen({
           <div className="signature-preview">{name || "Write your Name..."}</div>
           <Button disabled={!name.trim()} onClick={() => setStage("finished")}>Show preview <Icon path="M5 12h14M14 7l5 5-5 5" /></Button>
         </section>
-        <Button className="sign-back nav-circle" onClick={() => setStage("choose")}><Icon path="M15 18l-6-6 6-6" /><small>BACK</small></Button>
+        <Button className="sign-back nav-circle" onClick={() => setStage(signFrom)}><Icon path="M15 18l-6-6 6-6" /><small>BACK</small></Button>
         <Button className="sign-next nav-circle" disabled={!name.trim()} onClick={() => setStage("finished")}><Icon path="M9 6l6 6-6 6" /><small>NEXT</small></Button>
       </main>
     )
@@ -1588,7 +1610,7 @@ function FinalScreen({
         <section className="final-actions">
           <Button className="download-action act-download" onClick={download}><Icon path="M12 3v12M7 10l5 5 5-5M5 20h14" /><span className="act-full">Download Postcard</span><span className="act-short">DOWNLOAD</span></Button>
           <Button className="act-share" onClick={share}><Icon path="M18 8a3 3 0 1 0-2.8-4M6 15a3 3 0 1 0 0 6M18 14a3 3 0 1 0 0 6M8.6 17.5l6.8-3M8.6 6.5l6.8 3" /><span className="act-full">Share</span><span className="act-short">SHARE</span></Button>
-          <Button className="act-edit" onClick={onEdit}><Icon path="M4 20h4L19 9l-4-4L4 16v4ZM13 7l4 4" /><span className="act-full">Edit Features</span><span className="act-short">EDIT</span></Button>
+          <Button className="act-edit" onClick={() => setStage("edit")}><Icon path="M4 20h4L19 9l-4-4L4 16v4ZM13 7l4 4" /><span className="act-full">Edit Postcard</span><span className="act-short">EDIT</span></Button>
           <Button className="act-restart" onClick={onRestart}>Start Another Postcard</Button>
         </section>
         {actionState !== "idle" && (
@@ -1635,7 +1657,7 @@ function FinalScreen({
           <b>Merge All into 1 Postcard</b><span>Open the editable treemap composer</span>
         </Button>
       </section>
-      <Button className="preview-back nav-circle" onClick={onRestart}><Icon path="M15 18l-6-6 6-6" /><small>BACK</small></Button>
+      <Button className="preview-back nav-circle" onClick={onBack}><Icon path="M15 18l-6-6 6-6" /><small>BACK</small></Button>
       <Button className="preview-next nav-circle" disabled={!completed.length} onClick={() => setStage("edit")}><Icon path="M9 6l6 6-6 6" /><small>NEXT</small></Button>
     </main>
   )
@@ -1775,8 +1797,8 @@ class App extends Component<
         <FinalScreen
           image={image}
           results={results}
-          onEdit={() => this.setState({ screen: "making", step: 0 })}
           onRestart={() => this.setState({ screen: "upload", step: 0, results: {} })}
+          onBack={() => this.setState({ screen: "making", step: 3 })}
         />
       )
     } else if (step === 0) {

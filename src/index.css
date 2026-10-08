@@ -2541,7 +2541,7 @@ button { color: inherit; }
   .studio-feature-screen .cutout-controls label,
   .studio-feature-screen .studio-controls > label {
     width: 200px;
-    color: #fff;
+    color: #2F2F2F;
     font-size: 12px;
   }
   .studio-feature-screen .blob-slider-panel button,
@@ -4092,3 +4092,153 @@ button { color: inherit; }
 .app-menu-list button strong { font-weight: 900; }
 .app-menu-list button:hover { opacity: .72; transform: translateX(6px); }
 :root[data-theme="night"] .app-menu { background: #202733; }
+
+/* ---- Composer layer controls: BRING FORWARD (left) / SEND BACKWARD (right) ----
+   Always visible on the merge composer per frame 13, flanking the canvas.
+   Act on the selected region; disabled (dimmed) when nothing is selected. */
+.layer-forward,
+.layer-backward {
+  position: absolute;
+  z-index: 30;
+  top: 50%;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: 92px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink, #2F2F2F);
+  text-align: center;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+.layer-forward { left: 8px; }
+.layer-backward { right: 8px; }
+.layer-forward svg,
+.layer-backward svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.layer-forward small,
+.layer-backward small {
+  font-family: "Rounded Mplus 1c Bold", "Rounded Mplus 1c", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.layer-forward:disabled,
+.layer-backward:disabled { opacity: .32; cursor: not-allowed; }
+:root[data-theme="night"] .layer-forward,
+:root[data-theme="night"] .layer-backward { color: #f2efe6; }
+
+/* ---- CHOOSE IMAGE button on the Color Blob select stage (frames 2 & 3) ----
+   Centered under the canvas; a white outlined pill matching the frame. */
+.blob-palette-panel .choose-image {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 26px;
+  border: 2px solid #2F2F2F;
+  border-radius: 24px;
+  background: #fff;
+  color: #2F2F2F;
+  font-family: "Rounded Mplus 1c Bold", "Rounded Mplus 1c", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.blob-palette-panel .choose-image:hover { background: #2F2F2F; color: #fff; }
+:root[data-theme="night"] .blob-palette-panel .choose-image {
+  border-color: #f2efe6; background: transparent; color: #f2efe6;
+}
+
+/* ---- Blob paint stage (frames 4/5): force slider labels dark + style SAVE ----
+   Belt-and-suspenders: the SIZE/OPACITY label text sits in a child <span>;
+   color it dark directly so nothing in the cascade can render it white (day).
+   Night mode keeps the warm-white studio ink. */
+.studio-feature-screen .blob-slider-panel label,
+.studio-feature-screen .blob-slider-panel label span,
+.studio-feature-screen .cutout-controls label,
+.studio-feature-screen .cutout-controls label span {
+  color: #2F2F2F;
+}
+:root[data-theme="night"] .studio-feature-screen .blob-slider-panel label,
+:root[data-theme="night"] .studio-feature-screen .blob-slider-panel label span,
+:root[data-theme="night"] .studio-feature-screen .cutout-controls label,
+:root[data-theme="night"] .studio-feature-screen .cutout-controls label span {
+  color: #f7f1e4;
+}
+
+/* SAVE button — a white outlined pill matching the SVG (frames 4/5 and 9). */
+.save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 24px;
+  border: 2px solid #2F2F2F;
+  border-radius: 24px;
+  background: #fff;
+  color: #2F2F2F;
+  font-family: "Rounded Mplus 1c Bold", "Rounded Mplus 1c", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.save-button:hover { background: #2F2F2F; color: #fff; }
+:root[data-theme="night"] .save-button {
+  border-color: #f2efe6; background: transparent; color: #f2efe6;
+}
+
+/* ------------------------------------------------------------------ *
+ * Global heading alignment — every screen's heading + subheading is
+ * centre-aligned. Appended last so it overrides the per-screen
+ * left-align rules above (including the desktop media-query blocks).
+ * ------------------------------------------------------------------ */
+.upload-intro,
+.reference-title,
+.studio-feature-screen .reference-title,
+.composer-heading,
+.sign-heading,
+.sign-card,
+.separate-heading,
+.finished-heading,
+.final-heading {
+  text-align: center !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* The composer heading is a flex row on desktop (h1 beside subheading);
+ * stack it so the centred heading and subheading sit on their own lines. */
+.composer-heading { flex-direction: column !important; }
+
+/* Headings + subheadings (paragraphs, eyebrows) centred, and any
+ * max-width-capped subheading re-centred with auto side margins. */
+.upload-intro h1, .upload-intro p,
+.reference-title h1, .reference-title p,
+.studio-feature-screen .reference-title h1, .studio-feature-screen .reference-title p,
+.composer-heading h1, .composer-heading > p,
+.sign-heading h1, .sign-heading p,
+.sign-card h1, .sign-card .eyebrow,
+.separate-heading h1, .separate-heading .eyebrow,
+.finished-heading h1, .finished-heading .eyebrow,
+.final-heading h1, .final-heading > p:last-child {
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
